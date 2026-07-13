@@ -53,6 +53,7 @@ APP_NAME="Perpustakaan STMI"
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://nama-project-anda.vercel.app
+ASSET_URL=
 APP_TIMEZONE=Asia/Jakarta
 APP_LOCALE=id
 APP_FAKER_LOCALE=id_ID
@@ -68,6 +69,9 @@ DB_PORT=5432
 DB_DATABASE=
 DB_USERNAME=
 DB_PASSWORD=
+DB_SCHEMA=public
+DB_SSLMODE=require
+DATABASE_URL=
 
 LIBRARY_LOAN_DURATION_DAYS=7
 LIBRARY_LOAN_MAX_ITEMS=2
@@ -78,6 +82,8 @@ FILESYSTEM_DISK=local
 QUEUE_CONNECTION=sync
 SESSION_DRIVER=cookie
 SESSION_LIFETIME=120
+SESSION_DOMAIN=
+SESSION_SECURE_COOKIE=true
 ```
 
 Catatan:
@@ -85,7 +91,11 @@ Catatan:
 - `APP_KEY` wajib diisi dari hasil `php artisan key:generate --show`.
 - `SESSION_DRIVER=cookie` lebih cocok untuk deploy serverless ringan.
 - `CACHE_DRIVER=array` dipilih supaya tidak bergantung pada filesystem persisten.
+- Untuk Supabase, biasanya koneksi PostgreSQL production lebih aman memakai `DB_SSLMODE=require`.
+- Anda bisa mengisi `DATABASE_URL` atau pasangan `DB_HOST`/`DB_PORT`/`DB_DATABASE`/`DB_USERNAME`/`DB_PASSWORD`. Di project ini keduanya didukung.
 - Jika nanti Anda memakai storage cloud, ganti `FILESYSTEM_DISK` dari `local` ke disk cloud yang Anda konfigurasi.
+- File contoh siap pakai juga sudah ada di [.env.supabase.example](.env.supabase.example).
+- File [vercel.json](vercel.json), [.vercelignore](.vercelignore), dan [api/index.php](api/index.php) sudah disiapkan untuk entrypoint Laravel di Vercel.
 
 ## 4. Migrasi Database
 
@@ -98,7 +108,28 @@ php artisan db:seed --force
 
 Pastikan `.env` lokal Anda sementara diarahkan ke database Supabase saat menjalankan dua perintah ini.
 
-## 5. Login Demo
+Jika ingin aman, buat file `.env.supabase` terpisah di lokal berisi kredensial production Supabase, lalu jalankan:
+
+```bash
+php artisan migrate --force --env=supabase
+php artisan db:seed --force --env=supabase
+```
+
+Kalau Anda memilih cara ini, jangan commit file `.env.supabase`.
+
+## 5. Langkah di Vercel
+
+Saat import repo GitHub ke Vercel:
+
+1. Pilih repository ini.
+2. Tambahkan seluruh environment variables di atas sebelum deploy pertama.
+3. Isi `APP_KEY` terlebih dahulu.
+4. Deploy akan memakai runtime `vercel-php@0.7.4` dari `vercel-community/php`.
+5. Setelah deploy berhasil, cek halaman utama dan login admin.
+
+Kalau deploy pertama gagal, biasanya titik masalahnya ada di runtime PHP Vercel atau env database yang belum lengkap. Dalam kasus itu, periksa log deploy dulu sebelum mengubah kode aplikasi.
+
+## 6. Login Demo
 
 Seeder lokal/testing membuat akun admin:
 
@@ -107,8 +138,9 @@ Seeder lokal/testing membuat akun admin:
 
 Untuk portfolio, sebaiknya buat akun admin baru setelah deploy dan ganti password default.
 
-## 6. Batasan yang Perlu Anda Tahu
+## 7. Batasan yang Perlu Anda Tahu
 
 - Tanpa storage cloud, upload cover/gambar/lampiran dari admin tidak cocok untuk jangka panjang.
+- Pada konfigurasi Vercel saat ini, file upload akan diarahkan ke `/tmp` supaya request tidak langsung gagal, tetapi tetap tidak persisten antar instance.
 - Karena ini targetnya portfolio, Anda masih bisa deploy dulu untuk menunjukkan UI, katalog, dashboard, dan alur login.
 - Jika nanti ingin lebih stabil, langkah upgrade paling masuk akal adalah pindah storage file ke cloud dan/atau pindah hosting app ke Render atau Railway.

@@ -18,6 +18,8 @@
 /vendor
 /*.sql
 .env
+.env.supabase
+.env.vercel
 .env.backup
 .env.production
 .phpactor.json
